@@ -1,225 +1,257 @@
 # BMASS
 
-# Bootable Model As System
+## Bootable Model As System
 
 > **The model is the system.**
 
-BMASS is an open-source project exploring a different way of using artificial intelligence.
+**BMASS** is an open-source experiment in making a local AI model the primary interface to a computer.
 
-Instead of booting a computer and launching an AI application, BMASS boots directly into a lightweight Linux environment that automatically starts a local language model.
+Instead of starting a conventional desktop and then opening an AI application, BMASS boots from a USB drive into a lightweight Linux environment. After login, the BMASS launcher automatically starts a local language model.
 
-The operating system becomes a minimal foundation whose primary purpose is to support the model.
+The model runs on the computer itself. Once the required software and model have been installed, internet access and cloud inference are not required.
 
-The result is a portable, offline-first AI environment that runs entirely on local hardware.
+🎥 **[Watch BMASS boot and run on an ordinary 4 GB laptop](https://youtube.com/shorts/HRQl7P-wd1w)**
 
 ---
 
 ## Why BMASS?
 
-Most AI today is accessed through cloud services, web browsers or desktop applications.
+Artificial intelligence is often presented as something that requires expensive hardware, large data centres and permanent internet access.
 
-BMASS asks a different question:
+BMASS demonstrates a smaller and more accessible possibility.
 
-> **Can the language model itself become the primary interface to a computer?**
+The first prototype runs from an **8 GB USB flash drive** on an entry-level laptop with only **4 GB of memory**. It uses free and open-source software and a small local language model.
 
-Rather than adding AI to an operating system, BMASS explores making the operating system serve the AI.
-
-The project is intentionally lightweight, transparent and reproducible.
+The purpose is not to compete with the largest cloud models. It is to show that ordinary people can begin experimenting with private, portable and locally controlled AI using modest hardware.
 
 ---
 
-# Demonstration
+## Demonstration
 
-🎥 **Booting BMASS**
+The short video below shows the prototype:
 
-*A short demonstration video will be available here.*
+**[Watch the BMASS demonstration on YouTube](https://youtube.com/shorts/HRQl7P-wd1w)**
 
-(YouTube)
+It demonstrates:
 
-The demonstration shows:
-
-- Booting directly from USB
-- Automatic startup of the AI environment
-- Completely offline inference
-- Local question answering
+- Starting the computer from the BMASS USB drive
+- Booting the Alpine Linux environment
+- Launching BMASS
+- Loading a local language model
+- Running AI inference on the laptop itself
 
 ---
 
-# Prototype Platform
+## Prototype Hardware
 
-The first BMASS prototype was deliberately built using entry-level consumer hardware.
-
-The objective was not to maximise benchmark performance.
-
-The objective was to demonstrate that a complete AI operating environment can boot directly from a USB drive and perform useful local inference on hardware that many people already own.
+The first BMASS prototype was deliberately developed on entry-level consumer hardware.
 
 | Component | Specification |
-|-----------|---------------|
+|---|---|
 | Computer | ASUS VivoBook E510KA |
-| Processor | Intel® Celeron® N4500 |
+| Processor | Intel Celeron N4500 at 1.10 GHz |
 | Memory | 4 GB DDR4-3200 |
-| Graphics | Intel UHD Graphics (Jasper Lake) |
-| Internal Storage | 115 GB eMMC |
-| Boot Device | 8 GB SanDisk Cruzer Facet USB Flash Drive |
-| Operating System | Alpine Linux |
-| Inference Engine | llama.cpp |
-| Language Model | Qwen3 0.6B GGUF (Q4_K_M) |
+| Graphics | Intel UHD Graphics, Jasper Lake |
+| Internal storage | 115 GB eMMC |
+| BMASS boot device | 8 GB SanDisk Cruzer Facet USB flash drive |
+| BMASS operating system | Alpine Linux |
+| Inference engine | llama.cpp |
+| Language model | Qwen3 0.6B GGUF, Q4_K_M |
 
-Despite these modest specifications, BMASS successfully boots into a fully local AI environment capable of offline inference without requiring cloud services after installation.
+The prototype does not require a dedicated graphics card. Inference currently runs on the laptop’s CPU.
 
----
-
-# Building the Prototype
-
-The first prototype was developed from a blank USB drive rather than from a pre-built image.
-
-The process consisted of:
-
-1. Installing Alpine Linux onto an 8 GB USB flash drive.
-2. Creating a dedicated BMASS runtime environment.
-3. Compiling **llama.cpp** directly on the target system.
-4. Downloading and installing a locally hosted Qwen3 GGUF model.
-5. Creating a lightweight BMASS launcher.
-6. Configuring the system to boot directly into the local language model.
-7. Running entirely from removable media with no dependency on cloud inference after installation.
-
-The result is a portable AI environment that can be carried on a USB drive and used on compatible hardware while remaining completely under the user's control.
+The objective was not maximum speed or benchmark performance. It was to test whether a complete local AI environment could boot from removable media and operate on hardware that many people already own.
 
 ---
 
-# Current Features
+## How the Prototype Was Built
 
-- Bootable USB AI environment
-- Alpine Linux base
-- Offline local inference
-- llama.cpp integration
-- Local Qwen3 language model
-- Lightweight launcher
-- Portable installation
-- Open-source software
-- Reproducible build
+BMASS was assembled from a blank USB drive rather than downloaded as a completed disk image.
 
----
+The process was:
 
-# Repository Structure
+1. Partition an 8 GB USB flash drive.
+2. Install Alpine Linux onto the USB.
+3. Configure the USB as an independently bootable system.
+4. Install the required development tools.
+5. Build `llama.cpp` on Alpine Linux.
+6. Download a quantised Qwen3 0.6B GGUF model.
+7. Create a dedicated BMASS directory structure under `/opt/bmass`.
+8. Install the `llama.cpp` runtime and model inside that environment.
+9. Create the BMASS launcher.
+10. Configure the launcher to start automatically after login on the main terminal.
+11. Disable visible reasoning output for a cleaner interaction.
 
-```
-launcher/          BMASS launcher
-scripts/           Installation scripts
-docs/              Documentation
-examples/          Example configurations
-config/            Configuration files
-```
+The current prototype therefore consists of a minimal Linux foundation, a local inference engine, a local model and a lightweight launcher.
 
 ---
 
-# System Architecture
+## Current Architecture
 
-```
-            User
-              │
-              ▼
-      BMASS Launcher
-              │
-              ▼
-      llama.cpp Engine
-              │
-              ▼
-     Local GGUF Model
-              │
-              ▼
-      Local AI Inference
+```text
+Computer firmware
+        │
+        ▼
+BMASS USB bootloader
+        │
+        ▼
+Alpine Linux
+        │
+        ▼
+User login
+        │
+        ▼
+BMASS launcher
+        │
+        ▼
+llama.cpp
+        │
+        ▼
+Local Qwen3 model
+        │
+        ▼
+Offline AI interaction
 ```
 
-Future versions are planned to include:
+---
 
-- Model Context Protocol (MCP)
-- Local system tools
-- Document retrieval
-- Persistent memory
-- Multiple model management
-- Model federation
-- On-device fine-tuning
+## Current Prototype
+
+The Seed prototype currently demonstrates:
+
+- An independently bootable AI environment
+- Operation entirely from an 8 GB USB drive
+- Alpine Linux as a lightweight base
+- Local CPU inference using `llama.cpp`
+- A quantised Qwen3 0.6B model
+- Automatic model startup after login
+- Offline operation after installation
+- A simple BMASS command-line interface
+
+BMASS is currently a proof of concept. It is not yet a completed operating-system distribution or a one-command installer.
 
 ---
 
-# Design Principles
+## Repository Contents
 
-BMASS is guided by several design objectives.
+```text
+launcher/
+└── bmass       BMASS launcher
+```
 
-- Offline first
-- User ownership
-- Commodity hardware
-- Lightweight Linux base
-- Open source
-- Fully reproducible
-- Privacy by default
+The repository will gradually be expanded with installation instructions, configuration files, build scripts and system documentation.
 
-The project is not intended to replace Linux distributions.
-
-Instead, it explores a different computing model in which the operating system exists primarily to support a local AI model.
+Large model files, compiled binaries and complete operating-system images are not stored directly in this repository.
 
 ---
 
-# Roadmap
+## Design Principles
 
-## Seed v0.1
+BMASS is guided by several principles:
 
-- Bootable Model As System
-- Alpine Linux
-- llama.cpp
-- Local Qwen model
-- Offline inference
-
-## v0.2
-
-- Automatic login
-- Improved launcher
-- Installation scripts
-- Configuration management
-
-## v0.3
-
-- Model Context Protocol (MCP)
-- Local tools
-- File management
-
-## v0.4
-
-- Multiple models
-- Web interface
-- Model switching
-
-## v1.0
-
-Portable AI operating environment.
+- **Offline first** — local inference should not depend on a remote service.
+- **User controlled** — the user owns the machine, environment and model.
+- **Lightweight** — useful AI should be explored on modest hardware.
+- **Open source** — the system should be inspectable and adaptable.
+- **Portable** — the environment should be capable of running from removable media.
+- **Private by default** — prompts and local files should not need to leave the computer.
+- **Incremental** — the project should develop from a small working system rather than begin as a large theoretical design.
 
 ---
 
-# Contributing
+## What BMASS Is Not
 
-Contributions, ideas, bug reports and pull requests are welcome.
+BMASS is not currently a replacement for Alpine Linux.
 
-BMASS is being developed openly, and the project will evolve incrementally as new ideas are explored and tested.
+It is not a new foundation model.
 
----
+It is not intended to suggest that a 0.6B model can match the capabilities of large cloud-based systems.
 
-# Acknowledgements
+BMASS is an exploration of a different relationship between the operating system and the model:
 
-BMASS builds upon outstanding open-source projects, including:
-
-- Alpine Linux
-- llama.cpp
-- GGUF
-- Qwen
-
-Their work made this prototype possible.
+> Instead of AI being one application among many, the system is organised around the local model.
 
 ---
 
-# License
+## Roadmap
 
-See the LICENSE file.
+### Seed v0.1
+
+- [x] Bootable USB environment
+- [x] Alpine Linux installation
+- [x] `llama.cpp` runtime
+- [x] Local Qwen3 model
+- [x] BMASS launcher
+- [x] Offline local inference
+- [x] Public GitHub repository
+- [x] Video demonstration
+
+### v0.2
+
+- [ ] Automatic login
+- [ ] Improved startup experience
+- [ ] Configurable model path
+- [ ] Installation documentation
+- [ ] Build and setup scripts
+- [ ] Hardware compatibility testing
+
+### v0.3
+
+- [ ] Safe local tools
+- [ ] File access with explicit permissions
+- [ ] Model Context Protocol integration
+- [ ] Local document retrieval
+- [ ] Persistent configuration
+
+### Later Development
+
+- [ ] Multiple model support
+- [ ] Model selection and switching
+- [ ] Local web interface
+- [ ] Persistent memory
+- [ ] System recovery and rollback
+- [ ] Reproducible BMASS disk images
+- [ ] On-device adaptation and fine-tuning
+- [ ] Communication between locally owned models
+
+---
+
+## Can Anyone Build It?
+
+The current prototype still requires familiarity with Linux commands, disk partitioning and compiling software.
+
+However, it was deliberately created with inexpensive hardware and freely available software. One of the project’s main goals is to turn the manual prototype process into clear documentation and repeatable installation tools.
+
+The long-term aim is that a person should be able to prepare a USB drive, boot a compatible computer and run a private local AI without requiring specialised hardware or a cloud subscription.
+
+---
+
+## Contributing
+
+Ideas, testing, bug reports and contributions are welcome.
+
+BMASS is being developed openly from its earliest working prototype. Contributions that improve accessibility, documentation, hardware compatibility, safety or reproducibility are particularly valuable.
+
+Please use GitHub Issues to report problems or suggest features.
+
+---
+
+## Acknowledgements
+
+BMASS is made possible by existing open-source work, particularly:
+
+- [Alpine Linux](https://alpinelinux.org/)
+- [llama.cpp](https://github.com/ggml-org/llama.cpp)
+- [Qwen](https://github.com/QwenLM/Qwen3)
+- [GGUF](https://github.com/ggml-org/ggml)
+
+BMASS does not redistribute the Qwen model or `llama.cpp` binaries. Users remain responsible for reviewing and complying with the licences of all external components.
+
+---
+
+## License
+
+See the [LICENSE](LICENSE) file.
 
 ---
 
@@ -227,6 +259,6 @@ See the LICENSE file.
 
 **BMASS** stands for **Bootable Model As System**.
 
-It describes the central idea behind the project:
+It expresses the central idea of the project:
 
 > **The model is the system.**
