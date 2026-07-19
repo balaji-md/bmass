@@ -1,0 +1,33 @@
+#!/bin/sh
+
+BMASS_HOME="/opt/bmass"
+MODEL="$BMASS_HOME/models/qwen3-0.6b-q4_k_m.gguf"
+ENGINE="$BMASS_HOME/bin/llama-cli"
+
+clear
+echo "===================================="
+echo "          BMASS Seed v0.1"
+echo "===================================="
+echo
+echo "Offline local AI"
+echo "Model: Qwen3 0.6B Q4_K_M"
+echo
+echo "Loading model..."
+echo
+
+if [ ! -x "$ENGINE" ]; then
+    echo "Error: BMASS engine not found."
+    exit 1
+fi
+
+if [ ! -f "$MODEL" ]; then
+    echo "Error: BMASS model not found."
+    exit 1
+fi
+
+exec "$ENGINE" \
+    -m "$MODEL" \
+    --reasoning off \
+    -cnv \
+    -c 2048 \
+    -t 2

@@ -1,0 +1,9 @@
+*.gguf
+*.bin
+*.o
+*.so
+*.a
+build/
+.cache/
+__pycache__/
+*.pyc
