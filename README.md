@@ -1,99 +1,61 @@
-# BMASS
+# Prototype Platform
 
-## Bootable Model As System
+The first BMASS prototype was deliberately built using entry-level consumer hardware rather than specialised AI hardware.
 
-**BMASS** is an experimental open-source project exploring a simple idea:
+The goal was simple:
 
-> **What if the AI model became the primary system interface instead of just another application running inside an operating system?**
+> **Demonstrate that a complete AI environment can boot directly from a USB drive and perform useful local inference on hardware that many people already own.**
 
-BMASS boots from a USB drive into a lightweight Linux environment and automatically starts a local large language model. After installation, it operates completely offline, giving users a portable AI environment that they own and control.
+## Hardware
+
+| Component | Specification |
+|-----------|---------------|
+| Computer | ASUS VivoBook E510KA |
+| Processor | Intel® Celeron® N4500 |
+| Memory | 4 GB DDR4-3200 |
+| Graphics | Intel UHD Graphics (Jasper Lake) |
+| Internal Storage | 115 GB eMMC |
+| BMASS Boot Media | 8 GB SanDisk Cruzer Facet USB Flash Drive |
+| Operating System | Alpine Linux |
+| Inference Engine | llama.cpp |
+| Language Model | Qwen3 0.6B GGUF (Q4_K_M) |
+
+Despite these modest specifications, BMASS successfully boots into a fully local AI environment capable of offline inference without requiring cloud services after installation.
 
 ---
 
-## Why BMASS?
+# Building the Prototype
 
-Most AI today is accessed through web browsers, cloud services or heavyweight desktop applications.
+The prototype was developed incrementally rather than from a pre-built image.
 
-BMASS explores a different approach.
+The process consisted of:
 
-Instead of booting a computer and then opening an AI application, BMASS asks:
+1. Installing Alpine Linux onto an 8 GB USB flash drive.
+2. Creating a dedicated BMASS runtime environment.
+3. Compiling **llama.cpp** directly on the target system.
+4. Downloading and installing a locally hosted Qwen3 GGUF model.
+5. Creating a lightweight BMASS launcher.
+6. Configuring the system to boot directly into the local language model.
+7. Running entirely from removable media with no dependency on cloud inference.
 
-> *Can the model itself become the system?*
+The result is a portable AI environment that can be carried on a USB drive and used on compatible hardware while remaining completely under the user's control.
+
+---
+
+# Design Principles
+
+BMASS was guided by several design objectives from the outset.
+
+- Boot directly into AI
+- Offline-first operation
+- Commodity hardware
+- Open-source software
+- Lightweight Linux base
+- Fully reproducible installation
+- User ownership of both hardware and models
+
+Rather than attempting to build another Linux distribution, BMASS explores a different question:
+
+> **Can a language model become the primary interface to a computer?**
 
 The operating system becomes a lightweight foundation whose primary purpose is to support the local model.
-
----
-
-## Current Prototype (v0.1 Seed)
-
-Current features include:
-
-- Bootable Alpine Linux USB
-- Offline local AI
-- `llama.cpp` inference engine
-- Local Qwen3 0.6B GGUF model
-- Automatic BMASS launcher
-- Runs on modest hardware (~4 GB RAM)
-
-After the model has been installed, BMASS does not require an internet connection for inference.
-
----
-
-## Project Goals
-
-BMASS aims to become a portable, offline-first AI operating environment.
-
-Future work includes:
-
-- Safe system tools
-- Model Context Protocol (MCP) integration
-- Local document search
-- Multiple model management
-- Web interface
-- Healthcare and enterprise deployments
-
----
-
-## Repository Structure
-
-```
-launcher/      BMASS launcher
-scripts/       Installation and setup scripts
-docs/          Documentation
-examples/      Example configurations
-config/        Configuration files
-```
-
----
-
-## Philosophy
-
-BMASS is built around five principles.
-
-- Offline first
-- User controlled
-- Open source
-- Lightweight
-- Reproducible
-
----
-
-## Current Status
-
-This is an experimental prototype.
-
-The objective of the first public release is simply to demonstrate that a complete AI environment can boot directly from removable media and run entirely on local hardware.
-
----
-
-## Contributing
-
-Ideas, bug reports and contributions are welcome.
-
-This project is intended to evolve in public.
-
----
-
-## License
-
-See the LICENSE file.
