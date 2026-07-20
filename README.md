@@ -4,6 +4,205 @@
 
 > **The model is the system.**
 
+# BMASS
+
+## Bootable Model As System
+
+> **Boot directly into an AI operating shell.**
+
+BMASS is an open-source experiment that treats a local language model as the primary interface to a computer rather than another application running inside one.
+
+Instead of booting a desktop and then opening an AI program, BMASS starts directly into a lightweight Linux environment where the AI becomes the operating interface.
+
+The project explores a simple question:
+
+**What if the model was the system?**
+
+---
+20th July 2026:
+
+# Current Status (Seed v0.5)
+
+BMASS has now completed its first operating-intelligence loop.
+
+The current prototype boots from an **8 GB USB drive**, automatically launches a local language model, accepts natural language, executes Linux commands under a restricted user account, observes the operating system, and returns evidence-based responses.
+
+No graphical desktop is required.
+
+No internet connection is required after installation.
+
+The entire system currently runs on an entry-level laptop with **4 GB RAM**.
+
+---
+
+# Architecture
+
+```
+Operator
+      │
+      ▼
+Natural language
+      │
+      ▼
+BMASS runtime
+      │
+      ▼
+llama-server
+      │
+      ▼
+Local language model
+      │
+      ▼
+Command bridge
+      │
+      ▼
+Linux operating system
+      │
+      ▼
+Real command output
+      │
+      ▼
+Evidence-based response
+```
+
+Unlike a conventional chatbot, BMASS does not simply describe the operating system.
+
+It can inspect the machine, execute commands through a restricted Linux account, observe the results and continue the conversation using actual evidence returned from the computer.
+
+---
+
+# Demonstrated Features
+
+Current BMASS prototypes demonstrate:
+
+- Bootable USB AI environment
+- Alpine Linux operating system
+- Headless operation without a graphical interface
+- Automatic launch of a local language model
+- Offline inference after installation
+- Local `llama-server` runtime
+- Persistent BMASS operating interface
+- Natural language interaction
+- Safe command execution through a dedicated non-root Linux account
+- Evidence-based responses using real operating-system output
+- Portable operation from removable media
+
+---
+
+# What's New in Seed v0.5
+
+This release introduces the first complete operating-intelligence loop.
+
+Major architectural changes include:
+
+- migration from a foreground inference process to a background `llama-server`
+- persistent BMASS runtime
+- automatic system-prompt injection
+- separation of conversation and command execution
+- restricted command execution through the dedicated `bmass` account
+- startup diagnostics and health monitoring
+- improved conversation continuity
+- foundation for future local tools and agents
+
+BMASS has now crossed from simply running a local language model to creating an AI-mediated operating shell.
+
+---
+
+# Project Goals
+
+BMASS is not intended to replace existing operating systems.
+
+It explores a different relationship between humans, operating systems and local AI.
+
+The long-term objectives include:
+
+- private AI by default
+- offline-first computing
+- portable AI environments
+- user ownership of models and data
+- open-source development
+- inexpensive hardware
+- reproducible bootable AI systems
+- future local tools, memory and autonomous workflows
+
+The aim is not to build the largest AI.
+
+The aim is to make AI systems understandable, portable and personally owned.
+
+---
+
+# Current Prototype Hardware
+
+| Component | Specification |
+|-----------|---------------|
+| Computer | ASUS VivoBook E510KA |
+| Processor | Intel Celeron N4500 |
+| Memory | 4 GB DDR4 |
+| Graphics | Intel UHD Graphics |
+| Boot Device | 8 GB USB flash drive |
+| Operating System | Alpine Linux |
+| Runtime | llama.cpp / llama-server |
+| Model | Qwen3 0.6B GGUF (Q4_K_M) |
+
+The prototype deliberately targets inexpensive consumer hardware to demonstrate that useful local AI does not require specialised workstations or cloud infrastructure.
+
+---
+
+# Repository Structure
+
+```
+launcher/
+    bmass
+
+config/
+    system-prompt.txt
+
+docs/
+
+examples/
+
+scripts/
+```
+
+Large models, compiled binaries and operating-system images are intentionally excluded from the repository.
+
+The repository documents how BMASS is assembled rather than distributing copyrighted models.
+
+---
+
+# Current Development Status
+
+Seed v0.5 is an experimental research prototype.
+
+It demonstrates:
+
+✓ Bootable AI environment
+
+✓ Automatic model startup
+
+✓ Headless AI shell
+
+✓ Offline operation
+
+✓ Local command execution
+
+✓ Evidence-based responses
+
+✓ Portable USB deployment
+
+Current limitations include:
+
+- prototype security model
+- manual installation
+- hard-coded configuration
+- no persistent memory
+- no package installer
+- no automatic updates
+
+Development continues in the open.
+
+19th July 2026:
+
 **BMASS** is an open-source experiment in making a local AI model the primary interface to a computer.
 
 Instead of starting a conventional desktop and then opening an AI application, BMASS boots from a USB drive into a lightweight Linux environment. After login, the BMASS launcher automatically starts a local language model.
