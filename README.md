@@ -27,6 +27,27 @@ Commands that modify the system require explicit operator approval before execut
 
 Privilege escalation commands are blocked.
 ---
+###External Review
+
+##BMASS was recently featured by Korben:
+
+https://korben.info/bmass-boot-usb-modele-ia-local.html
+
+Many thanks to Korben for taking the time to examine the project and provide an independent technical review.
+
+Note: The embedded demonstration video in the article is the original proof-of-concept (BMASS Seed v0.5) that first demonstrated the architecture. The project has continued to evolve since that recording.
+
+Following the review, BMASS has been updated to:
+
+Fixed the system prompt path inconsistency.
+Added explicit operator approval for modifying shell commands.
+Restricted automatic execution to safe inspection commands.
+Improved runtime safety and command handling.
+
+Constructive external technical feedback continues to help improve the project
+
+
+
 20th July 2026:
 
 # Current Status (Seed v0.5)
