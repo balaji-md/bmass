@@ -1,0 +1,489 @@
+#!/usr/bin/env python3
+"""BMASS v0.5: headless llama-server supervisor and terminal command bridge."""
+
+import json
+import re
+import shlex
+import subprocess
+import sys
+import time
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+BMASS_HOME = Path("/opt/bmass")
+ENGINE = BMASS_HOME / "bin/llama-server"
+MODEL = BMASS_HOME / "models/qwen3-0.6b-q4_k_m.gguf"
+SYSTEM_PROMPT_FILE = BMASS_HOME / "config/system-prompt.txt"
+LEGACY_SYSTEM_PROMPT_FILE = BMASS_HOME / "system-prompt.txt"
+
+if not SYSTEM_PROMPT_FILE.exists() and LEGACY_SYSTEM_PROMPT_FILE.exists():
+    SYSTEM_PROMPT_FILE = LEGACY_SYSTEM_PROMPT_FILE
+SERVER_LOG = Path("/tmp/bmass-llama-server.log")
+
+HOST = "127.0.0.1"
+PORT = 8080
+MODEL_ALIAS = "bmass"
+API_URL = f"http://{HOST}:{PORT}/v1/chat/completions"
+HEALTH_URL = f"http://{HOST}:{PORT}/health"
+EXEC_USER = "bmass"
+COMMAND_TIMEOUT = 30
+MAX_COMMAND_OUTPUT = 32_768
+
+SHELL_TAG = re.compile(
+    r"<shell>\s*(.*?)\s*</shell>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+PRIVILEGE_ESCALATION = re.compile(
+    r"(^|[\s;&|()])(?:sudo|doas|pkexec|su)(?=\s|$)",
+    re.IGNORECASE,
+)
+
+FALSE_EXECUTION_CLAIM = re.compile(
+    r"\b(?:command|operation)\b.{0,40}\bexecut(?:ed|ion)\b"
+    r"|\bexecuted as bmass\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+# Model-generated commands may run automatically only when they are simple,
+# read-oriented inspections. Anything else is shown to the operator and
+# requires explicit approval. This is a command broker, not a claim that the
+# shell itself is a security boundary.
+MODEL_AUTO_COMMANDS = {
+    "ls", "pwd", "whoami", "id", "uname", "date", "uptime",
+    "df", "du", "free", "ps", "hostname",
+    "cat", "head", "tail", "grep", "find", "which",
+    "env", "printenv", "wc", "stat", "file", "readlink", "realpath",
+}
+
+SHELL_CONTROL_SYNTAX = re.compile(r"[;&|><`$()\n\r]")
+DANGEROUS_FIND_OPTIONS = {"-delete", "-exec", "-execdir", "-ok", "-okdir"}
+
+SAFE_BARE_COMMANDS = {
+    "ls", "pwd", "whoami", "id", "uname", "date", "uptime",
+    "df", "du", "free", "ps", "ip", "hostname", "mount",
+    "cat", "head", "tail", "grep", "find", "which",
+    "env", "printenv", "wc", "stat", "file", "readlink", "realpath",
+}
+
+
+def http_json(url: str, payload=None, timeout: int = 3600):
+    data = None
+    headers = {}
+
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+
+    request = Request(url, data=data, headers=headers)
+
+    with urlopen(request, timeout=timeout) as response:
+        raw = response.read().decode("utf-8")
+        return json.loads(raw)
+
+
+def server_is_ready() -> bool:
+    try:
+        with urlopen(HEALTH_URL, timeout=2) as response:
+            return 200 <= response.status < 300
+    except (HTTPError, URLError, TimeoutError, OSError):
+        return False
+
+
+def start_server() -> None:
+    if server_is_ready():
+        print("Ready.\n")
+        return
+
+    server_command = [
+        str(ENGINE),
+        "--model", str(MODEL),
+        "--alias", MODEL_ALIAS,
+        "--host", HOST,
+        "--port", str(PORT),
+        "--ctx-size", "2048",
+        "--threads", "2",
+        "--parallel", "1",
+        "--reasoning", "off",
+        "--offline",
+        "--no-ui",
+    ]
+
+    # `su - bmass` deliberately clears most of root's environment, including
+    # LD_LIBRARY_PATH. llama-server in this portable bundle depends on shared
+    # libraries shipped beside it, so discover their directories and rebuild
+    # the loader path inside the bmass login shell.
+    library_dirs = {str(ENGINE.parent)}
+
+    try:
+        for library in BMASS_HOME.rglob("*.so*"):
+            library_dirs.add(str(library.parent))
+    except OSError:
+        pass
+
+    library_path = ":".join(sorted(library_dirs))
+    shell_command = (
+        "export LD_LIBRARY_PATH="
+        + shlex.quote(library_path)
+        + "; exec "
+        + shlex.join(server_command)
+    )
+
+    # Start with a fresh diagnostic log for this boot.
+    SERVER_LOG.write_text("", encoding="utf-8")
+
+    with SERVER_LOG.open("ab", buffering=0) as log:
+        server_process = subprocess.Popen(
+            ["su", "-", EXEC_USER, "-c", shell_command],
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            close_fds=True,
+        )
+
+    print("Loading model", end="", flush=True)
+
+    for _ in range(180):
+        if server_is_ready():
+            print("\nReady.\n")
+            return
+
+        # Do not wait for three minutes when the loader has already failed.
+        if server_process.poll() is not None:
+            print("\nllama-server stopped before becoming ready.\n")
+            try:
+                print(SERVER_LOG.read_text(encoding="utf-8", errors="replace"))
+            except OSError:
+                print(f"Check {SERVER_LOG}")
+            raise SystemExit(1)
+
+        print(".", end="", flush=True)
+        time.sleep(1)
+
+    print(
+        f"\nBMASS server did not become ready. Check {SERVER_LOG}",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+
+
+def ask_model(messages):
+    payload = {
+        "model": MODEL_ALIAS,
+        "messages": messages,
+        "temperature": 0.1,
+        "max_tokens": 700,
+        "stream": False,
+    }
+
+    response = http_json(API_URL, payload)
+    message = response["choices"][0]["message"]
+    content = message.get("content") or ""
+    return content.strip()
+
+
+def run_process_as_bmass(command: str):
+    return subprocess.run(
+        ["su", "-", EXEC_USER, "-c", command],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=COMMAND_TIMEOUT,
+        check=False,
+    )
+
+
+def run_as_bmass(command: str) -> str:
+    command = command.strip()
+
+    if not command:
+        return "Command was empty."
+
+    if PRIVILEGE_ESCALATION.search(command):
+        return (
+            "Blocked: privilege escalation is forbidden. "
+            "Commands must remain under the bmass account."
+        )
+
+    try:
+        result = run_process_as_bmass(command)
+        output = result.stdout.rstrip()
+
+        if len(output) > MAX_COMMAND_OUTPUT:
+            output = (
+                output[:MAX_COMMAND_OUTPUT]
+                + "\n\n[Output truncated by BMASS runtime]"
+            )
+
+        if output:
+            return output
+
+        try:
+            words = shlex.split(command)
+        except ValueError:
+            words = []
+
+        if words and words[0] == "ls":
+            location = run_process_as_bmass("pwd").stdout.strip() or "/home/bmass"
+            return f"(no visible files in {location}; use 'ls -la' to include hidden files)"
+
+        return "(command completed without producing output)"
+
+    except subprocess.TimeoutExpired as exc:
+        partial = exc.stdout or ""
+
+        if isinstance(partial, bytes):
+            partial = partial.decode("utf-8", errors="replace")
+
+        return (
+            partial.rstrip()
+            + f"\nCommand stopped after {COMMAND_TIMEOUT} seconds."
+        ).strip()
+
+    except Exception as exc:
+        return f"Command could not be run: {exc}"
+
+
+def is_model_auto_safe(command: str) -> bool:
+    """Allow only simple, read-oriented model-generated commands."""
+    command = command.strip()
+
+    if not command or SHELL_CONTROL_SYNTAX.search(command):
+        return False
+
+    try:
+        words = shlex.split(command)
+    except ValueError:
+        return False
+
+    if not words or words[0] not in MODEL_AUTO_COMMANDS:
+        return False
+
+    if words[0] == "find" and any(
+        word in DANGEROUS_FIND_OPTIONS for word in words[1:]
+    ):
+        return False
+
+    return True
+
+
+def run_model_command(command: str):
+    """Run a model command automatically only when the broker deems it safe."""
+    command = command.strip()
+
+    if not command:
+        return "Command was empty.", False
+
+    if PRIVILEGE_ESCALATION.search(command):
+        return (
+            "Blocked: privilege escalation is forbidden. "
+            "Commands must remain under the bmass account.",
+            False,
+        )
+
+    if is_model_auto_safe(command):
+        return run_as_bmass(command), True
+
+    print("\nBMASS proposes a command requiring operator approval:")
+    print("-----------------------------------------------")
+    print(command)
+    print("-----------------------------------------------")
+
+    try:
+        approval = input(
+            "Type EXECUTE to run it as user bmass; anything else cancels: "
+        ).strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        approval = ""
+
+    if approval != "EXECUTE":
+        return "Command cancelled by the operator.", False
+
+    return run_as_bmass(command), True
+
+
+def trim_history(messages, keep: int = 14):
+    if len(messages) <= keep + 1:
+        return messages
+
+    return [messages[0]] + messages[-keep:]
+
+
+def looks_like_safe_bare_command(text: str) -> bool:
+    try:
+        words = shlex.split(text)
+    except ValueError:
+        return False
+
+    if not words:
+        return False
+
+    return words[0] in SAFE_BARE_COMMANDS
+
+
+def extract_direct_command(text: str):
+    stripped = text.strip()
+    lowered = stripped.lower()
+
+    prefixes = (
+        ("/run ", 5),
+        ("/command ", 9),
+        ("$ ", 2),
+        ("execute command ", 16),
+        ("command ", 8),
+    )
+
+    for prefix, length in prefixes:
+        if lowered.startswith(prefix):
+            return stripped[length:].strip()
+
+    if stripped.startswith("/") and len(stripped) > 1:
+        return stripped[1:].strip()
+
+    if looks_like_safe_bare_command(stripped):
+        return stripped
+
+    return None
+
+
+def complete_turn(history):
+    working = list(history)
+    corrected_false_claim = False
+
+    for _ in range(5):
+        reply = ask_model(working)
+        commands = SHELL_TAG.findall(reply)
+
+        if commands:
+            working.append({"role": "assistant", "content": reply})
+            results = []
+
+            for command in commands:
+                output, executed = run_model_command(command)
+                status = "executed" if executed else "not-executed"
+                results.append(
+                    f"<command status=\"{status}\">\n"
+                    f"{command.strip()}\n</command>\n"
+                    f"<output>\n{output}\n</output>"
+                )
+
+            working.append({
+                "role": "user",
+                "content": (
+                    "BMASS runtime evaluated the proposed commands under the "
+                    "non-privileged bmass account. A status of executed means the "
+                    "command actually ran; not-executed means it was blocked or "
+                    "cancelled. These are the real results:\n\n"
+                    + "\n\n".join(results)
+                    + "\n\nAnswer the operator naturally. "
+                    "Do not repeat shell tags or claim anything beyond this evidence."
+                ),
+            })
+            continue
+
+        if FALSE_EXECUTION_CLAIM.search(reply) and not corrected_false_claim:
+            corrected_false_claim = True
+            working.append({"role": "assistant", "content": reply})
+            working.append({
+                "role": "user",
+                "content": (
+                    "Correction from the BMASS runtime: no command was executed "
+                    "during this turn. Answer the operator's actual message normally. "
+                    "Do not mention command execution."
+                ),
+            })
+            continue
+
+        history.append({"role": "assistant", "content": reply})
+        print(reply)
+        return trim_history(history)
+
+    fallback = "I could not complete that turn reliably."
+    history.append({"role": "assistant", "content": fallback})
+    print(fallback)
+    return trim_history(history)
+
+
+def print_help() -> None:
+    print("Normal text             talk to BMASS")
+    print("ls / pwd / id           run common inspection commands directly")
+    print("/ls or /df -h           slash shorthand for a command")
+    print("$ COMMAND               run COMMAND as user bmass")
+    print("/run COMMAND            run COMMAND as user bmass")
+    print("/command COMMAND        run COMMAND as user bmass")
+    print("command COMMAND         run COMMAND as user bmass")
+    print("execute command COMMAND run COMMAND as user bmass")
+    print("/clear                  clear conversation history")
+    print("/help                   show this help")
+
+
+def main() -> None:
+    for required in (ENGINE, MODEL, SYSTEM_PROMPT_FILE):
+        if not required.exists():
+            print(f"Missing required file: {required}", file=sys.stderr)
+            raise SystemExit(1)
+
+    system_prompt = SYSTEM_PROMPT_FILE.read_text(
+        encoding="utf-8",
+    ).strip()
+
+    print("\033[2J\033[H", end="")
+    print("====================================")
+    print("          BMASS Seed v0.5")
+    print("====================================")
+    print("Offline local operating intelligence\n")
+
+    start_server()
+    history = [{"role": "system", "content": system_prompt}]
+
+    while True:
+        try:
+            user_text = input("BMASS> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return
+
+        if not user_text:
+            continue
+
+        if user_text == "/help":
+            print_help()
+            print()
+            continue
+
+        if user_text == "/clear":
+            history = [{"role": "system", "content": system_prompt}]
+            print("Conversation cleared.\n")
+            continue
+
+        direct_command = extract_direct_command(user_text)
+
+        if direct_command is not None:
+            print(run_as_bmass(direct_command))
+            print()
+            continue
+
+        history.append({"role": "user", "content": user_text})
+
+        try:
+            history = complete_turn(history)
+        except (
+            HTTPError,
+            URLError,
+            TimeoutError,
+            OSError,
+            KeyError,
+            ValueError,
+        ) as exc:
+            print(f"BMASS connection error: {exc}")
+
+        print()
+
+
+if __name__ == "__main__":
+    main()
