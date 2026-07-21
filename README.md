@@ -27,9 +27,9 @@ Commands that modify the system require explicit operator approval before execut
 
 Privilege escalation commands are blocked.
 ---
-###External Review
+### External Review
 
-##BMASS was recently featured by Korben:
+## BMASS was recently featured by Korben:
 
 https://korben.info/bmass-boot-usb-modele-ia-local.html
 
