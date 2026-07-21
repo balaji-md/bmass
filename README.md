@@ -18,6 +18,14 @@ The project explores a simple question:
 
 **What if the model was the system?**
 
+21 July 2026:
+### Security
+
+BMASS automatically executes only safe inspection commands.
+
+Commands that modify the system require explicit operator approval before execution.
+
+Privilege escalation commands are blocked.
 ---
 20th July 2026:
 
