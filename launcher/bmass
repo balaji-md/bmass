@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""BMASS v0.5: headless llama-server supervisor and terminal command bridge."""
+"""BMASS v0.5.1: headless llama-server supervisor and terminal command bridge."""
 
 import json
 import re
@@ -14,7 +14,11 @@ from urllib.request import Request, urlopen
 BMASS_HOME = Path("/opt/bmass")
 ENGINE = BMASS_HOME / "bin/llama-server"
 MODEL = BMASS_HOME / "models/qwen3-0.6b-q4_k_m.gguf"
-SYSTEM_PROMPT_FILE = BMASS_HOME / "system-prompt.txt"
+SYSTEM_PROMPT_FILE = BMASS_HOME / "config/system-prompt.txt"
+LEGACY_SYSTEM_PROMPT_FILE = BMASS_HOME / "system-prompt.txt"
+
+if not SYSTEM_PROMPT_FILE.exists() and LEGACY_SYSTEM_PROMPT_FILE.exists():
+    SYSTEM_PROMPT_FILE = LEGACY_SYSTEM_PROMPT_FILE
 SERVER_LOG = Path("/tmp/bmass-llama-server.log")
 
 HOST = "127.0.0.1"
@@ -23,6 +27,8 @@ MODEL_ALIAS = "bmass"
 API_URL = f"http://{HOST}:{PORT}/v1/chat/completions"
 HEALTH_URL = f"http://{HOST}:{PORT}/health"
 EXEC_USER = "bmass"
+COMMAND_TIMEOUT = 30
+MAX_COMMAND_OUTPUT = 32_768
 
 SHELL_TAG = re.compile(
     r"<shell>\s*(.*?)\s*</shell>",
@@ -39,6 +45,21 @@ FALSE_EXECUTION_CLAIM = re.compile(
     r"|\bexecuted as bmass\b",
     re.IGNORECASE | re.DOTALL,
 )
+
+
+# Model-generated commands may run automatically only when they are simple,
+# read-oriented inspections. Anything else is shown to the operator and
+# requires explicit approval. This is a command broker, not a claim that the
+# shell itself is a security boundary.
+MODEL_AUTO_COMMANDS = {
+    "ls", "pwd", "whoami", "id", "uname", "date", "uptime",
+    "df", "du", "free", "ps", "hostname",
+    "cat", "head", "tail", "grep", "find", "which",
+    "env", "printenv", "wc", "stat", "file", "readlink", "realpath",
+}
+
+SHELL_CONTROL_SYNTAX = re.compile(r"[;&|><`$()\n\r]")
+DANGEROUS_FIND_OPTIONS = {"-delete", "-exec", "-execdir", "-ok", "-okdir"}
 
 SAFE_BARE_COMMANDS = {
     "ls", "pwd", "whoami", "id", "uname", "date", "uptime",
@@ -171,7 +192,7 @@ def run_process_as_bmass(command: str):
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
-        timeout=300,
+        timeout=COMMAND_TIMEOUT,
         check=False,
     )
 
@@ -191,6 +212,12 @@ def run_as_bmass(command: str) -> str:
     try:
         result = run_process_as_bmass(command)
         output = result.stdout.rstrip()
+
+        if len(output) > MAX_COMMAND_OUTPUT:
+            output = (
+                output[:MAX_COMMAND_OUTPUT]
+                + "\n\n[Output truncated by BMASS runtime]"
+            )
 
         if output:
             return output
@@ -214,11 +241,70 @@ def run_as_bmass(command: str) -> str:
 
         return (
             partial.rstrip()
-            + "\nCommand stopped after 300 seconds."
+            + f"\nCommand stopped after {COMMAND_TIMEOUT} seconds."
         ).strip()
 
     except Exception as exc:
         return f"Command could not be run: {exc}"
+
+
+def is_model_auto_safe(command: str) -> bool:
+    """Allow only simple, read-oriented model-generated commands."""
+    command = command.strip()
+
+    if not command or SHELL_CONTROL_SYNTAX.search(command):
+        return False
+
+    try:
+        words = shlex.split(command)
+    except ValueError:
+        return False
+
+    if not words or words[0] not in MODEL_AUTO_COMMANDS:
+        return False
+
+    if words[0] == "find" and any(
+        word in DANGEROUS_FIND_OPTIONS for word in words[1:]
+    ):
+        return False
+
+    return True
+
+
+def run_model_command(command: str):
+    """Run a model command automatically only when the broker deems it safe."""
+    command = command.strip()
+
+    if not command:
+        return "Command was empty.", False
+
+    if PRIVILEGE_ESCALATION.search(command):
+        return (
+            "Blocked: privilege escalation is forbidden. "
+            "Commands must remain under the bmass account.",
+            False,
+        )
+
+    if is_model_auto_safe(command):
+        return run_as_bmass(command), True
+
+    print("\nBMASS proposes a command requiring operator approval:")
+    print("-----------------------------------------------")
+    print(command)
+    print("-----------------------------------------------")
+
+    try:
+        approval = input(
+            "Type EXECUTE to run it as user bmass; anything else cancels: "
+        ).strip()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        approval = ""
+
+    if approval != "EXECUTE":
+        return "Command cancelled by the operator.", False
+
+    return run_as_bmass(command), True
 
 
 def trim_history(messages, keep: int = 14):
@@ -278,17 +364,21 @@ def complete_turn(history):
             results = []
 
             for command in commands:
-                output = run_as_bmass(command)
+                output, executed = run_model_command(command)
+                status = "executed" if executed else "not-executed"
                 results.append(
-                    f"<command>\n{command.strip()}\n</command>\n"
+                    f"<command status=\"{status}\">\n"
+                    f"{command.strip()}\n</command>\n"
                     f"<output>\n{output}\n</output>"
                 )
 
             working.append({
                 "role": "user",
                 "content": (
-                    "BMASS runtime executed the command as the non-privileged "
-                    "user bmass. These are the real results:\n\n"
+                    "BMASS runtime evaluated the proposed commands under the "
+                    "non-privileged bmass account. A status of executed means the "
+                    "command actually ran; not-executed means it was blocked or "
+                    "cancelled. These are the real results:\n\n"
                     + "\n\n".join(results)
                     + "\n\nAnswer the operator naturally. "
                     "Do not repeat shell tags or claim anything beyond this evidence."
