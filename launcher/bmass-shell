@@ -1,0 +1,11 @@
+#!/bin/sh
+
+CMD="$(cat)"
+
+echo "__BMASS_BEGIN__"
+
+sh -c "$CMD" 2>&1
+STATUS=$?
+
+echo "__BMASS_EXIT__=$STATUS"
+echo "__BMASS_END__"

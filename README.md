@@ -27,6 +27,12 @@ BMASS has undergone its largest architectural change since the project began.
 The previous prototype relied on Python orchestration around the language model. That layer has now largely been removed. BMASS is moving towards becoming a native Unix resident compiled directly from C++ using the llama.cpp libraries.
 
 Rather than acting as a conventional chatbot, BMASS now follows a perception–action loop:
+
+
+## New loop
+---
+```
+
 User Request
 ↓
 Model
@@ -41,8 +47,8 @@ Model
 ↓
 Final Answer
 
-
-
+```
+---
 The BMASS runtime has been recompiled with a shell execution layer. When the model determines that operating system information is required, it emits a `<shell>...</shell>` action. BMASS executes the command, captures the real output from Linux, feeds that observation back into the model, and allows the model to continue reasoning using actual system state rather than assumptions.
 
 This removes a substantial amount of orchestration code while moving the intelligence closer to the operating system itself. The architecture is intentionally simple and is designed to evolve incrementally.
