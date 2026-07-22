@@ -1,4 +1,99 @@
 # BMASS Installation
+23 July 2026
+# Installing the Native BMASS Runtime
+
+This update replaces much of the previous Python orchestration with a native C++ runtime.
+
+## Requirements
+
+- Alpine Linux (recommended)
+- Compiled llama.cpp
+- GGUF model (Qwen 3 0.6B used for development)
+- Existing BMASS directory structure
+
+## Copy the supplied files
+
+Replace or add:
+
+```
+bmass.cpp
+bmass
+system-prompt.txt
+```
+
+Recommended locations:
+
+```
+/root/llama.cpp/examples/bmass/bmass.cpp
+/opt/bmass/bin/bmass
+/opt/bmass/config/system-prompt.txt
+```
+
+Adjust these paths if your installation differs.
+
+## Build
+
+```
+cd /root/llama.cpp
+cmake --build build --target bmass -j
+```
+
+Copy the executable:
+
+```
+cp build/bin/bmass /opt/bmass/bin/bmass
+chmod 755 /opt/bmass/bin/bmass
+```
+
+## Shell executor
+
+Ensure `bmass-shell` exists:
+
+```
+/opt/bmass/bin/bmass-shell
+```
+
+and is executable:
+
+```
+chmod 755 /opt/bmass/bin/bmass-shell
+```
+
+The runtime uses this helper to execute shell commands and return structured observations to BMASS.
+
+## System prompt
+
+Copy the supplied:
+
+```
+system-prompt.txt
+```
+
+to:
+
+```
+/opt/bmass/config/system-prompt.txt
+```
+
+BMASS loads this prompt at startup before the first user interaction.
+
+## Notes
+
+This release is experimental.
+
+You may need to adjust:
+
+- model paths
+- executable paths
+- shell helper paths
+- library locations
+- startup scripts
+
+to match your own installation.
+
+Please report issues and improvements via GitHub.
+
+19 July 2026:
 
 These instructions install the BMASS launcher and system prompt on an existing Linux system.
 

@@ -18,6 +18,59 @@ The project explores a simple question:
 
 **What if the model was the system?**
 
+23 July 2026
+
+# 🚀 Major Architecture Update (Experimental)
+
+BMASS has undergone its largest architectural change since the project began.
+
+The previous prototype relied on Python orchestration around the language model. That layer has now largely been removed. BMASS is moving towards becoming a native Unix resident compiled directly from C++ using the llama.cpp libraries.
+
+Rather than acting as a conventional chatbot, BMASS now follows a perception–action loop:
+User Request
+↓
+Model
+↓
+Shell Action
+↓
+Linux
+↓
+Observation
+↓
+Model
+↓
+Final Answer
+
+
+
+The BMASS runtime has been recompiled with a shell execution layer. When the model determines that operating system information is required, it emits a `<shell>...</shell>` action. BMASS executes the command, captures the real output from Linux, feeds that observation back into the model, and allows the model to continue reasoning using actual system state rather than assumptions.
+
+This removes a substantial amount of orchestration code while moving the intelligence closer to the operating system itself. The architecture is intentionally simple and is designed to evolve incrementally.
+
+### Included in this update
+
+- Native `bmass` executable
+- `bmass.cpp` source
+- Updated `system-prompt.txt`
+- Shell execution runtime
+- Screenshot demonstrating the perception–action loop
+
+### Important
+
+This remains an **experimental research project**.
+
+The implementation is evolving rapidly and has only been tested on the reference BMASS environment.
+
+Please check file paths before building or running, as your installation layout may differ.
+
+Bug reports, pull requests and architectural suggestions are very welcome.
+
+---
+
+Thank you to everyone who has encouraged, tested, criticised and contributed ideas to BMASS. Your feedback has directly influenced the evolution of this project.
+
+
+
 21 July 2026:
 ### Security
 
