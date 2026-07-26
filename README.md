@@ -1,13 +1,11 @@
 # BMASS
 
-## Bootable Model As System
-
-> **The model is the system.**
-# BMASS
-
 **Bootable Model As System**
 
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-BMASS-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/balaji-md)
+
+> **The model is the system.**
+
 # BMASS
 
 ## Bootable Model As System
