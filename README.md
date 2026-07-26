@@ -3,7 +3,6 @@
 **Bootable Model As System**
 
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-BMASS-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/balaji-md)
-[![Join Discussions](https://img.shields.io/badge/Join-Discussions-0969da?style=for-the-badge&logo=github)](https://github.com/balaji-md/bmass/discussions)
 > **Boot directly into an AI operating shell.**
 
 BMASS is an open-source experiment that treats a local language model as the primary interface to a computer rather than another application running inside one.
@@ -13,6 +12,8 @@ Instead of booting a desktop and then opening an AI program, BMASS starts direct
 The project explores a simple question:
 
 **What if the model was the system?**
+[![Join Discussions](https://img.shields.io/badge/Join-Discussions-0969da?style=for-the-badge&logo=github)](https://github.com/balaji-md/bmass/discussions)
+
 
 23 July 2026
 
