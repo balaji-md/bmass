@@ -4,12 +4,6 @@
 
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-BMASS-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/balaji-md)
 
-> **The model is the system.**
-
-# BMASS
-
-## Bootable Model As System
-
 > **Boot directly into an AI operating shell.**
 
 BMASS is an open-source experiment that treats a local language model as the primary interface to a computer rather than another application running inside one.
