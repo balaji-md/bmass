@@ -13,6 +13,7 @@ The project explores a simple question:
 
 **What if the model was the system?**
 [![Join Discussions](https://img.shields.io/badge/Join-Discussions-0969da?style=for-the-badge&logo=github)](https://github.com/balaji-md/bmass/discussions)
+
 **🤝 Become a Contributor:** Post your GitHub username in Discussions and tell us how you'd like to help
 
 23 July 2026
