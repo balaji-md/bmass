@@ -15,6 +15,7 @@ The project explores a simple question:
 [![Join Discussions](https://img.shields.io/badge/Join-Discussions-0969da?style=for-the-badge&logo=github)](https://github.com/balaji-md/bmass/discussions)
 
 [💡Latest BMASS discussion: Portable Intent Computing](https://github.com/balaji-md/bmass/discussions/6)
+
 **🤝 Become a Contributor:** Post your GitHub username in Discussions and tell us how you'd like to help
 
 23 July 2026
