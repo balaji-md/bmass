@@ -12,6 +12,10 @@ Instead of booting a desktop and then opening an AI program, BMASS starts direct
 The project explores a simple question:
 
 **What if the model was the system?**
+
+🎥 **[Watch BMASS boot and run on an ordinary 4 GB laptop](https://youtube.com/shorts/HRQl7P-wd1w)**
+(Initial functional prototype)
+
 [![Join Discussions](https://img.shields.io/badge/Join-Discussions-0969da?style=for-the-badge&logo=github)](https://github.com/balaji-md/bmass/discussions)
 
 [💡Latest BMASS discussion: Portable Intent Computing](https://github.com/balaji-md/bmass/discussions/6)
@@ -297,7 +301,6 @@ Instead of starting a conventional desktop and then opening an AI application, B
 
 The model runs on the computer itself. Once the required software and model have been installed, internet access and cloud inference are not required.
 
-🎥 **[Watch BMASS boot and run on an ordinary 4 GB laptop](https://youtube.com/shorts/HRQl7P-wd1w)**
 
 ---
 
