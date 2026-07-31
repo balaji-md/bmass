@@ -16,6 +16,8 @@ The project explores a simple question:
 🎥 **[Watch BMASS boot and run on an ordinary 4 GB laptop](https://youtube.com/shorts/HRQl7P-wd1w)**
 (Initial functional prototype)
 
+**[BMASS Featured in Korben:](https://korben.info/bmass-boot-usb-modele-ia-local.html)
+
 [![Join Discussions](https://img.shields.io/badge/Join-Discussions-0969da?style=for-the-badge&logo=github)](https://github.com/balaji-md/bmass/discussions)
 
 [💡Latest BMASS discussion: Portable Intent Computing](https://github.com/balaji-md/bmass/discussions/6)
