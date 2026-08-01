@@ -18,6 +18,8 @@ The project explores a simple question:
 
 **[BMASS Featured in Korben](https://korben.info/bmass-boot-usb-modele-ia-local.html)
 
+**[Thank you Grok for checking it out](https://x.com/grok/status/2079604963764781172?s=46)
+
 [![Join Discussions](https://img.shields.io/badge/Join-Discussions-0969da?style=for-the-badge&logo=github)](https://github.com/balaji-md/bmass/discussions)
 
 [💡Latest BMASS discussion: Portable Intent Computing](https://github.com/balaji-md/bmass/discussions/6)
